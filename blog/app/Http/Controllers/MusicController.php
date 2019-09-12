@@ -20,52 +20,10 @@ class MusicController extends Controller
     {
         $music = Music::paginate(10);
         return response()->json($music,200);
+       // return view('form',compact('music'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-  
-
-
-
-
-    public function storeCate(){
-   
-        if ($handle = opendir(public_path('ringtone'))) {
-            Schema::disableForeignKeyConstraints();
-            DB::table('categories')->truncate();
-            DB::table('musics')->truncate();
-            Schema::enableForeignKeyConstraints();
-            while (false !== ($entry = readdir($handle))) {
-                if ($entry != "." && $entry != "..") {
-                    DB::table('categories')->insert(['name'=>$entry,'url'=>public_path('ringtone').'/'.$entry]);
-                }
-            }
-            closedir($handle);
-        }
-    }
-
-    public function storeMusic($name)
-    {
-        $cate = Categories::all();
-        foreach ($cate as $cates){
-            if($cates->name === $name){
-                if ($handle = opendir(public_path('ringtone'.'/'.$name))) {
-                    while (false !== ($entry = readdir($handle))) {
-                        if ($entry != "." && $entry != "..") {
-                            DB::table('musics')->insert(['name'=>$entry,'url'=>public_path('ringtone'.'/'.$name).'/'.$entry,'cate_id'=>$cates->id]);
-                        }
-                    }
-                    closedir($handle);
-                }
-            }
-        }
-    }
-
-    public function getFile(){
+    public function getFileDB(){
 
         if ($handle = opendir(public_path('ringtone'))) {
          
@@ -73,34 +31,32 @@ class MusicController extends Controller
             DB::table('categories')->truncate();
             DB::table('musics')->truncate();
             Schema::enableForeignKeyConstraints();
-            while (false !== ($entry = readdir($handle))) {
-                if ($entry != "." && $entry != "..") {
+            while (true == ($entry = readdir($handle))) {
+            
+                if ($entry != "." && $entry != "..") 
                     $cate =  DB::table('categories')->insertGetId(['name'=>$entry,'url'=>public_path('ringtone').'/'.$entry]);
-                    
                     if ($music = opendir(public_path('ringtone'.'/'.$entry))) {
                         while (false !== ($name = readdir($music))) {
-                          
                             if ($name != "." && $name != "..") {
                                 DB::table('musics')->insert(['name'=>$name,'url'=>public_path('ringtone'.'/'.$entry).'/'.$name,'cate_id'=>$cate]);
-                  
                             }
                         }
                         closedir($music);
                     }
-                }
+                
             }
             closedir($handle);
         }
     }
 
     public function listCate(){
-        $cate = $cate = Categories::all();
+         $cate = Categories::paginate(5);
         return response()->json($cate,200);
     }
 
-    public function listMusicCate($name){
+    public function show($id){
 
-        $musicCate = Categories::where('name',$name)->first();
+        $musicCate = Categories::where('id',$id)->first();
         $music =  $musicCate->music()->get();
         return response()->json($music,200);
         
@@ -113,9 +69,15 @@ class MusicController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
-    {
-       
+    public function getDownload($name)
+    {  
+    
+        $music = Music::where('name','like','%'.$name.'%')->first();
+        $cate = $music->category()->first();
+      
+       $file = (public_path().'/ringtone/'.$cate->name.'/'.$music->name);
+  
+       return response()->download($file);
        
     }
 

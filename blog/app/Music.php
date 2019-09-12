@@ -9,6 +9,6 @@ class Music extends Model
     protected $fillable = ['name','cate_id'];
 
     public function category(){
-        return $this->belongsTo(Categories::class);
+        return $this->belongsTo(Categories::class,'cate_id');
     }
 }
